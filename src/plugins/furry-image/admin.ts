@@ -3,7 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { definePlugin, param, seg } from "@fraqjs/fraq";
-import type { Session } from "@fraqjs/fraq";
+import type { milky, Session } from "@fraqjs/fraq";
 
 import config from "@/config";
 
@@ -11,6 +11,25 @@ import { FurryImageStoreService } from "./service";
 import type { Furry, Image } from "./types";
 
 const IMG_PATH = path.join(config.storagePath, "furimg");
+
+const IMAGE_EXTENSIONS: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/gif": "gif",
+    "image/webp": "webp",
+    "image/bmp": "bmp",
+};
+
+const imageExtFromContentType = (contentType: string | null): string =>
+    IMAGE_EXTENSIONS[contentType ?? ""] ?? "jpg";
+
+const resolveImagePath = (relPath: string): string | undefined => {
+    const fullPath = path.resolve(IMG_PATH, relPath);
+    if (!fullPath.startsWith(path.resolve(IMG_PATH) + path.sep)) {
+        return undefined;
+    }
+    return fullPath;
+};
 
 const FurryImageAdminPlugin = definePlugin({
     name: "FurryImageAdmin",
@@ -91,6 +110,14 @@ const FurryImageAdminPlugin = definePlugin({
                     ctx.store.listImages(furry.id),
                 ]);
                 await ctx.store.removeFurry(furry.id);
+                await Promise.all(
+                    images.map(async (image) => {
+                        const fullPath = resolveImagePath(image.path);
+                        if (fullPath) {
+                            await fs.promises.rm(fullPath, { force: true });
+                        }
+                    })
+                );
                 await session.reply(
                     `已删除毛毛「${furry.name}」及其 ${aliases.length} 个别名、${images.length} 张图片`
                 );
@@ -176,37 +203,63 @@ const FurryImageAdminPlugin = definePlugin({
         const images = ctx.router.group("furimg").group("image");
         images
             .command("add")
-            .describe("为毛毛添加图片")
+            .describe("为毛毛添加图片（在消息中附带）")
             .arg("name", param.str().describe("毛毛的名称或别名"))
-            .arg(
-                "relPath",
-                param.str().describe("图片相对 furimg 数据目录的路径")
-            )
-            .execute(async (session, { name, relPath }) => {
+            .execute(async (session, { name }) => {
                 const furry = await resolveFurry(name);
                 if (!furry) {
                     await session.reply(`未找到毛毛「${name}」`);
                     return;
                 }
-                const fullPath = path.resolve(IMG_PATH, relPath);
-                if (!fullPath.startsWith(path.resolve(IMG_PATH) + path.sep)) {
-                    await session.reply(
-                        `图片路径必须位于数据目录内：${relPath}`
-                    );
-                    return;
-                }
-                if (!fs.existsSync(fullPath)) {
-                    await session.reply(`文件不存在：${relPath}`);
-                    return;
-                }
-                if (await ctx.store.getImageByPath(relPath)) {
-                    await session.reply(`图片已存在：${relPath}`);
-                    return;
-                }
-                const id = await ctx.store.addImage(furry.id, relPath);
-                await session.reply(
-                    `已为毛毛「${furry.name}」添加图片 #${id}：${relPath}`
+                const imageSegments = session.raw.segments.filter(
+                    (segment): segment is milky.IncomingImageSegment =>
+                        segment.type === "image"
                 );
+                if (imageSegments.length === 0) {
+                    await session.reply("请在消息中附带一张或多张图片");
+                    return;
+                }
+                const added: number[] = [];
+                const failed: string[] = [];
+                for (const segment of imageSegments) {
+                    try {
+                        const { url } = await ctx.client.get_resource_temp_url({
+                            resource_id: segment.data.resource_id,
+                        });
+                        const response = await fetch(url);
+                        if (!response.ok) {
+                            failed.push(segment.data.resource_id);
+                            continue;
+                        }
+                        const ext = imageExtFromContentType(
+                            response.headers.get("content-type")
+                        );
+                        const relPath = `${furry.id}/${segment.data.resource_id}.${ext}`;
+                        if (await ctx.store.getImageByPath(relPath)) {
+                            failed.push(segment.data.resource_id);
+                            continue;
+                        }
+                        const fullPath = path.join(IMG_PATH, relPath);
+                        await fs.promises.mkdir(path.dirname(fullPath), {
+                            recursive: true,
+                        });
+                        await fs.promises.writeFile(
+                            fullPath,
+                            Buffer.from(await response.arrayBuffer())
+                        );
+                        added.push(await ctx.store.addImage(furry.id, relPath));
+                    } catch {
+                        failed.push(segment.data.resource_id);
+                    }
+                }
+                let message = `已为毛毛「${furry.name}」添加 ${added.length} 张图片`;
+                if (added.length > 0) {
+                    message += `（#${added.join(" #")}）`;
+                }
+                if (failed.length > 0) {
+                    message += `，${failed.length} 张保存失败`;
+                }
+                await session.reply(message);
             });
 
         images
@@ -220,6 +273,10 @@ const FurryImageAdminPlugin = definePlugin({
                     return;
                 }
                 await ctx.store.removeImage(id);
+                const fullPath = resolveImagePath(image.path);
+                if (fullPath) {
+                    await fs.promises.rm(fullPath, { force: true });
+                }
                 await session.reply(`已删除图片 #${id}`);
             });
 
@@ -233,7 +290,11 @@ const FurryImageAdminPlugin = definePlugin({
                     await session.reply(`图片 #${id} 不存在`);
                     return;
                 }
-                const fullPath = path.resolve(IMG_PATH, image.path);
+                const fullPath = resolveImagePath(image.path);
+                if (!fullPath) {
+                    await session.reply(`图片路径无效：${image.path}`);
+                    return;
+                }
                 if (!fs.existsSync(fullPath)) {
                     await session.reply(`图片文件不存在：${image.path}`);
                     return;
