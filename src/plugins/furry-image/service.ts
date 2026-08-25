@@ -84,6 +84,21 @@ class FurryImageStoreService {
             .executeTakeFirst();
     }
 
+    async renameFurry(id: number, newName: string): Promise<void> {
+        await this.kysely.db
+            .updateTable(TABLE_FURRIES)
+            .set({ name: newName })
+            .where("id", "=", id)
+            .executeTakeFirst();
+    }
+
+    async removeFurry(id: number): Promise<void> {
+        await this.kysely.db
+            .deleteFrom(TABLE_FURRIES)
+            .where("id", "=", id)
+            .executeTakeFirst();
+    }
+
     async listFurries(): Promise<Furry[]> {
         return this.kysely.db
             .selectFrom(TABLE_FURRIES)
@@ -118,12 +133,15 @@ class FurryImageStoreService {
             .executeTakeFirst();
     }
 
-    async listAliases(): Promise<Alias[]> {
-        return this.kysely.db
+    async listAliases(furryId?: number): Promise<Alias[]> {
+        let query = this.kysely.db
             .selectFrom(TABLE_ALIASES)
             .select(["alias", "furry_id"])
-            .orderBy("alias")
-            .execute();
+            .orderBy("alias");
+        if (furryId !== undefined) {
+            query = query.where("furry_id", "=", furryId);
+        }
+        return query.execute();
     }
 
     async addImage(furryId: number, path: string): Promise<number> {
@@ -138,6 +156,21 @@ class FurryImageStoreService {
         return this.kysely.db
             .selectFrom(TABLE_IMAGES)
             .select(["id", "furry_id", "path"])
+            .where("id", "=", id)
+            .executeTakeFirst();
+    }
+
+    async getImageByPath(path: string): Promise<Image | undefined> {
+        return this.kysely.db
+            .selectFrom(TABLE_IMAGES)
+            .select(["id", "furry_id", "path"])
+            .where("path", "=", path)
+            .executeTakeFirst();
+    }
+
+    async removeImage(id: number): Promise<void> {
+        await this.kysely.db
+            .deleteFrom(TABLE_IMAGES)
             .where("id", "=", id)
             .executeTakeFirst();
     }

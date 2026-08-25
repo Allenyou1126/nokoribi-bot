@@ -21,6 +21,7 @@
 - 入口 `src/main.ts`：`Context.fromUrl(config.milky.baseUrl)` 连接 Milky 协议端 → 安装插件 → fork 出 `group` / `private` / `super_user` 子上下文
 - `src/config.ts`：用 zod 校验根目录 `nokoribi.config.json`（gitignored，需自行从 `nokoribi.config.json.example` 复制）
 - `src/plugins/<name>/index.ts`：用 `definePlugin` 定义插件；**新插件不会生效，除非在 `main.ts` 中 `ctx.install`**
+- `src/plugins/furry-image/`：`FurryImagePlugin`（根上下文安装，提供 `FurryImageStoreService`，注册 `furimg_furries` / `furimg_aliases` / `furimg_images` 三张表）+ `FurryImageAdminPlugin`（`super_user` 安装，提供 `/furimg furry|alias|image` 增删改查指令）
 - 路径别名 `@/*` → `src/*`（tsconfig paths + tsdown alias 双配置）
 
 ## 约定

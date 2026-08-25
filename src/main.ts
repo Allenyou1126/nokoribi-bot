@@ -5,6 +5,8 @@ import MessageStorePlugin from "@fraqjs/plugin-message-store";
 import RandomPlugin from "@fraqjs/plugin-random";
 
 import config from "./config";
+import FurryImageAdminPlugin from "./plugins/furry-image/admin";
+import FurryImagePlugin from "./plugins/furry-image";
 import StatusPlugin from "./plugins/status";
 
 const ctx = Context.fromUrl(config.milky.baseUrl, {
@@ -38,6 +40,7 @@ ctx.install(MessageStorePlugin, {
     listenRecall: true,
 });
 ctx.install(RandomPlugin);
+ctx.install(FurryImagePlugin);
 
 const groupChatCtx = ctx.fork("group", {
     message_receive: ({ data }) => data.message_scene === "group",
@@ -56,5 +59,6 @@ const superUserCtx = ctx.fork("super_user", {
     message_receive: ({ data }) => config.superuser.includes(data.sender_id),
 });
 superUserCtx.install(StatusPlugin);
+superUserCtx.install(FurryImageAdminPlugin);
 
 ctx.start();
