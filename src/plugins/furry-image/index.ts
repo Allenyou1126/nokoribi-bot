@@ -54,7 +54,9 @@ const FurryImagePlugin = definePlugin({
                     );
                     return;
                 }
-                await session.reply(`#${furry.id} ${furry.name}`);
+                await session.reply(
+                    `这是 毛毛 #${furry.id} 「${furry.name}」 的图片：`
+                );
                 const image = ctx.random.pick(images);
                 await session.reply([
                     seg.image(

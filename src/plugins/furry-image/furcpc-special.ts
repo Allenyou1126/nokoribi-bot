@@ -49,7 +49,6 @@ const FurryImageFurCPCSpecialPlugin = definePlugin({
                     );
                     return;
                 }
-                await session.reply(`#${furry.id} ${furry.name}`);
                 const image = ctx.random.pick(images);
                 await session.reply([
                     seg.image(
