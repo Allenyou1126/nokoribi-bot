@@ -7,6 +7,7 @@ import RandomPlugin from "@fraqjs/plugin-random";
 import config from "./config";
 import FurryImagePlugin from "./plugins/furry-image";
 import FurryImageAdminPlugin from "./plugins/furry-image/admin";
+import FurryImageFurCPCSpecialPlugin from "./plugins/furry-image/furcpc-special";
 import StatusPlugin from "./plugins/status";
 
 const ctx = Context.fromUrl(config.milky.baseUrl, {
@@ -60,5 +61,12 @@ const superUserCtx = ctx.fork("super_user", {
 });
 superUserCtx.install(StatusPlugin);
 superUserCtx.install(FurryImageAdminPlugin);
+
+const FurCPCCtx = groupChatCtx.fork("fur_cpc", {
+    message_receive: ({ data }) =>
+        data.message_scene === "group" &&
+        config.furcpcId.includes(data.group.group_id),
+});
+FurCPCCtx.install(FurryImageFurCPCSpecialPlugin);
 
 ctx.start();

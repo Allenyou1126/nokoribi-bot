@@ -12,7 +12,10 @@ class FurryImageStoreService {
         "nokoribi/furry-image/FurryImageStoreService"
     );
 
-    constructor(private readonly kysely: KyselyService) {
+    constructor(
+        private readonly kysely: KyselyService,
+        private readonly imagePath: string
+    ) {
         this.kysely.schemas.register({
             name: "furimg",
             migrations: {
@@ -58,6 +61,10 @@ class FurryImageStoreService {
                 },
             },
         });
+    }
+
+    getImagePath(): string {
+        return this.imagePath;
     }
 
     async addFurry(name: string): Promise<number> {
@@ -127,7 +134,11 @@ class FurryImageStoreService {
     async findFurryByAlias(alias: string): Promise<Furry | undefined> {
         return this.kysely.db
             .selectFrom(TABLE_ALIASES)
-            .innerJoin(TABLE_FURRIES, "furimg_furries.id", "furimg_aliases.furry_id")
+            .innerJoin(
+                TABLE_FURRIES,
+                "furimg_furries.id",
+                "furimg_aliases.furry_id"
+            )
             .select(["furimg_furries.id", "furimg_furries.name"])
             .where("furimg_aliases.alias", "=", alias)
             .executeTakeFirst();

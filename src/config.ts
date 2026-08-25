@@ -12,6 +12,7 @@ const ConfigSchema = z.object({
             .optional(),
     }),
     superuser: z.array(z.number()).describe("Superuser UINs").default([]),
+    furcpcId: z.array(z.number()).describe("FurCPC Group IDs").default([]),
     storagePath: z.string().describe("Data storage path").default("./data/"),
     dbPath: z
         .string()

@@ -2,48 +2,43 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { definePlugin, param, seg } from "@fraqjs/fraq";
+import { definePlugin, seg } from "@fraqjs/fraq";
 import { KyselyService } from "@fraqjs/plugin-kysely";
 import { RandomService } from "@fraqjs/plugin-random";
 
-import config from "@/config";
-
 import { FurryImageStoreService } from "./service";
 
-const IMG_PATH = path.join(config.storagePath, "furimg");
-
-const FurryImagePlugin = definePlugin({
-    name: "FurryImage",
-    inject: { kysely: KyselyService, random: RandomService },
-    provides: [FurryImageStoreService],
+const FurryImageFurCPCSpecialPlugin = definePlugin({
+    name: "FurryImageFurCPCSpecial",
+    inject: {
+        kysely: KyselyService,
+        store: FurryImageStoreService,
+        random: RandomService,
+    },
 
     apply: (ctx) => {
-        if (!fs.existsSync(IMG_PATH)) {
-            fs.mkdirSync(IMG_PATH);
-        }
-        const store = new FurryImageStoreService(ctx.kysely, IMG_PATH);
-        ctx.provide(FurryImageStoreService, store);
         ctx.router
-            .command("furimg")
-            .describe("来只毛 —— 随机毛毛图片")
-            .arg("name", param.str().describe("毛毛的名称或别名"))
-            .execute(async (session, { name }) => {
+            .command("来只俊杰")
+            .describe("来只俊杰")
+            .execute(async (session) => {
+                const name = "俊杰";
                 const furry =
-                    (await store.getFurryByName(name)) ??
-                    (await store.findFurryByAlias(name));
+                    (await ctx.store.getFurryByName(name)) ??
+                    (await ctx.store.findFurryByAlias(name));
                 if (!furry) {
                     await session.reply(`未找到毛毛「${name}」`);
                     return;
                 }
-                const images = (await store.listImages(furry.id)).filter(
+                const images = (await ctx.store.listImages(furry.id)).filter(
                     (image) => {
                         const fullPath = path.resolve(
-                            store.getImagePath(),
+                            ctx.store.getImagePath(),
                             image.path
                         );
                         return (
                             fullPath.startsWith(
-                                path.resolve(store.getImagePath()) + path.sep
+                                path.resolve(ctx.store.getImagePath()) +
+                                    path.sep
                             ) && fs.existsSync(fullPath)
                         );
                     }
@@ -58,7 +53,9 @@ const FurryImagePlugin = definePlugin({
                 const image = ctx.random.pick(images);
                 await session.reply([
                     seg.image(
-                        pathToFileURL(path.resolve(IMG_PATH, image.path)).href
+                        pathToFileURL(
+                            path.resolve(ctx.store.getImagePath(), image.path)
+                        ).href
                     ),
                 ]);
             });
@@ -66,7 +63,6 @@ const FurryImagePlugin = definePlugin({
 });
 
 export {
-    FurryImagePlugin,
-    FurryImagePlugin as default,
-    FurryImageStoreService,
+    FurryImageFurCPCSpecialPlugin,
+    FurryImageFurCPCSpecialPlugin as default,
 };
