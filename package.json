@@ -1,0 +1,34 @@
+{
+  "name": "nokoribi-bot",
+  "version": "0.0.1",
+  "description": "A Node.js based QQ Bot program, adapted for Milky Protocol. Powering Nokoribi Bot.",
+  "author": "Allen You <i@allenyou.wang>",
+  "type": "module",
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "start": "node dist/main.mjs",
+    "prestart": "pnpm run build",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt ."
+  },
+  "dependencies": {
+    "@fraqjs/color-log": "^1.0.0",
+    "@fraqjs/fraq": "^1.0.0",
+    "@fraqjs/plugin-kysely": "^1.0.0",
+    "@fraqjs/plugin-message-store": "^1.0.0",
+    "@fraqjs/plugin-random": "^1.0.0",
+    "kysely": "^0.29.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "oxfmt": "^0.64.0",
+    "oxlint": "^1.79.0",
+    "tsdown": "^0.22.14",
+    "typescript": "^7.0.2"
+  },
+  "packageManager": "pnpm@11.3.0"
+}

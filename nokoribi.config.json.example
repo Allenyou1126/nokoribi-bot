@@ -1,0 +1,7 @@
+{
+    "milky": {
+        "baseUrl": "http://127.0.0.1:3000",
+        "accessToken": "sk-1234567890abcdef1234567890abcdef"
+    },
+    "superuser": [12345678],
+}
