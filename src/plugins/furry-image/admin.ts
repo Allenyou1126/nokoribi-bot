@@ -211,7 +211,21 @@ const FurryImageAdminPlugin = definePlugin({
                     await session.reply(`未找到毛毛「${name}」`);
                     return;
                 }
-                const imageSegments = session.raw.segments.filter(
+                await session.reply("请在消息中附带一张或多张图片");
+            });
+
+        images
+            .command("add")
+            .describe("为毛毛添加图片（在消息中附带）")
+            .arg("name", param.str().describe("毛毛的名称或别名"))
+            .arg("images", param.catchAll().describe("要添加的图片"))
+            .execute(async (session, { name, images: segments }) => {
+                const furry = await resolveFurry(name);
+                if (!furry) {
+                    await session.reply(`未找到毛毛「${name}」`);
+                    return;
+                }
+                const imageSegments = segments.filter(
                     (segment): segment is milky.IncomingImageSegment =>
                         segment.type === "image"
                 );
