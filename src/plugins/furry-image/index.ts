@@ -35,7 +35,6 @@ const FurryImagePlugin = definePlugin({
                     await session.reply(`未找到毛毛「${name}」`);
                     return;
                 }
-                const aliases = await store.listAliases(furry.id);
                 const images = (
                     await store.listImages(furry.id)
                 ).filter((image) => {
@@ -51,11 +50,7 @@ const FurryImagePlugin = definePlugin({
                     );
                     return;
                 }
-                const aliasText =
-                    aliases.length > 0
-                        ? `（别名：${aliases.map((alias) => alias.alias).join("、")}）`
-                        : "";
-                await session.reply(`#${furry.id} ${furry.name}${aliasText}`);
+                await session.reply(`#${furry.id} ${furry.name}`);
                 const image = ctx.random.pick(images);
                 await session.reply([
                     seg.image(pathToFileURL(path.resolve(IMG_PATH, image.path)).href),
