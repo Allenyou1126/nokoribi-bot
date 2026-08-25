@@ -1,6 +1,8 @@
 # AGENTS.md
 
-基于 [Fraq](https://fraq.dev/docs) 框架与 [Milky](https://milky.ntqqrev.org/) 协议的 QQ Bot。技术栈：TypeScript（Node.js 24）、pnpm 11.3.0、tsdown 构建、oxlint / oxfmt、Kysely + SQLite。
+基于 [Fraq](https://fraq.dev/docs) 框架与 [Milky](https://milky.ntqqrev.org/) 协议的 QQ Bot。技术栈：TypeScript（Node.js 24）、pnpm 11.3.0、tsdown 构建、oxlint / oxfmt、[Kysely](https://fraq.dev/docs/plugins/kysely) + SQLite。
+
+对于库的用法，优先在 AGENTS.md 中的链接里寻找文档，找不到再在项目中寻找已有的写法作为参考，最后再尝试阅读库的源码。
 
 ## 命令
 
