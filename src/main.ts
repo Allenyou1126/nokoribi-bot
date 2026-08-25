@@ -5,8 +5,8 @@ import MessageStorePlugin from "@fraqjs/plugin-message-store";
 import RandomPlugin from "@fraqjs/plugin-random";
 
 import config from "./config";
-import FurryImageAdminPlugin from "./plugins/furry-image/admin";
 import FurryImagePlugin from "./plugins/furry-image";
+import FurryImageAdminPlugin from "./plugins/furry-image/admin";
 import StatusPlugin from "./plugins/status";
 
 const ctx = Context.fromUrl(config.milky.baseUrl, {

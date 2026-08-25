@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
-import { definePlugin, param } from "@fraqjs/fraq";
+import { definePlugin, param, seg } from "@fraqjs/fraq";
 import type { Session } from "@fraqjs/fraq";
 
 import config from "@/config";
@@ -25,7 +26,7 @@ const FurryImageAdminPlugin = definePlugin({
             );
         };
 
-        const replyImageList = async (
+        const replyImageIds = async (
             session: Session,
             images: Image[]
         ): Promise<void> => {
@@ -33,20 +34,9 @@ const FurryImageAdminPlugin = definePlugin({
                 await session.reply("还没有任何图片");
                 return;
             }
-            const names = new Map(
-                (await ctx.store.listFurries()).map((furry) => [
-                    furry.id,
-                    furry.name,
-                ])
-            );
             await session.reply(
-                `图片列表（${images.length}）：\n` +
-                    images
-                        .map(
-                            (image) =>
-                                `#${image.id} ${names.get(image.furry_id) ?? image.furry_id}：${image.path}`
-                        )
-                        .join("\n")
+                `图片 ID 列表（${images.length}）：` +
+                    images.map((image) => ` #${image.id}`).join("")
             );
         };
 
@@ -188,7 +178,10 @@ const FurryImageAdminPlugin = definePlugin({
             .command("add")
             .describe("为毛毛添加图片")
             .arg("name", param.str().describe("毛毛的名称或别名"))
-            .arg("relPath", param.str().describe("图片相对 furimg 数据目录的路径"))
+            .arg(
+                "relPath",
+                param.str().describe("图片相对 furimg 数据目录的路径")
+            )
             .execute(async (session, { name, relPath }) => {
                 const furry = await resolveFurry(name);
                 if (!furry) {
@@ -197,7 +190,9 @@ const FurryImageAdminPlugin = definePlugin({
                 }
                 const fullPath = path.resolve(IMG_PATH, relPath);
                 if (!fullPath.startsWith(path.resolve(IMG_PATH) + path.sep)) {
-                    await session.reply(`图片路径必须位于数据目录内：${relPath}`);
+                    await session.reply(
+                        `图片路径必须位于数据目录内：${relPath}`
+                    );
                     return;
                 }
                 if (!fs.existsSync(fullPath)) {
@@ -229,15 +224,26 @@ const FurryImageAdminPlugin = definePlugin({
             });
 
         images
-            .command("list")
-            .describe("列出所有图片")
-            .execute(async (session) => {
-                await replyImageList(session, await ctx.store.listImages());
+            .command("get")
+            .describe("按 ID 获取图片")
+            .arg("id", param.num().describe("图片 ID"))
+            .execute(async (session, { id }) => {
+                const image = await ctx.store.getImageById(id);
+                if (!image) {
+                    await session.reply(`图片 #${id} 不存在`);
+                    return;
+                }
+                const fullPath = path.resolve(IMG_PATH, image.path);
+                if (!fs.existsSync(fullPath)) {
+                    await session.reply(`图片文件不存在：${image.path}`);
+                    return;
+                }
+                await session.reply([seg.image(pathToFileURL(fullPath).href)]);
             });
 
         images
-            .rawPattern()
-            .arg("list", param.literal("list"))
+            .command("list")
+            .describe("列出一只毛毛的图片 ID")
             .arg("name", param.str().describe("毛毛的名称或别名"))
             .execute(async (session, { name }) => {
                 const furry = await resolveFurry(name);
@@ -245,7 +251,17 @@ const FurryImageAdminPlugin = definePlugin({
                     await session.reply(`未找到毛毛「${name}」`);
                     return;
                 }
-                await replyImageList(session, await ctx.store.listImages(furry.id));
+                await replyImageIds(
+                    session,
+                    await ctx.store.listImages(furry.id)
+                );
+            });
+
+        images
+            .command("list")
+            .describe("列出所有图片的 ID")
+            .execute(async (session) => {
+                await replyImageIds(session, await ctx.store.listImages());
             });
     },
 });
