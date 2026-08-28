@@ -9,6 +9,7 @@ import FurryImagePlugin from "./plugins/furry-image";
 import FurryImageAdminPlugin from "./plugins/furry-image/admin";
 import FurryImageFurCPCSpecialPlugin from "./plugins/furry-image/furcpc-special";
 import StatusPlugin from "./plugins/status";
+import VVPicPlugin from "./plugins/vv-pic";
 
 const ctx = Context.fromUrl(config.milky.baseUrl, {
     accessToken: config.milky.accessToken,
@@ -42,6 +43,7 @@ ctx.install(MessageStorePlugin, {
 });
 ctx.install(RandomPlugin);
 ctx.install(FurryImagePlugin);
+ctx.install(VVPicPlugin);
 
 const groupChatCtx = ctx.fork("group", {
     message_receive: ({ data }) => data.message_scene === "group",
