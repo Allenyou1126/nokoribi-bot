@@ -24,7 +24,11 @@ const ctx = Context.fromUrl(config.milky.baseUrl, {
             if (session.raw.message_scene === "friend") {
                 return [{ type: "prefix", prefix: "/" }];
             }
-            return [{ type: "mention", prefix: "/" }];
+            return [
+                { type: "mention", prefix: "/" },
+                { type: "mention" },
+                { type: "prefix", prefix: "/" },
+            ];
         },
     },
 });
